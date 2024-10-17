@@ -2279,8 +2279,12 @@
     // remove all listeners on a given node
       for (var event_ in SVG.listeners[index]) { SVG.off(node, event_) }
 
-      delete SVG.listeners[index]
-      delete SVG.handlerMap[index]
+      // delete SVG.listeners[index]
+      // delete SVG.handlerMap[index]
+
+      SVG.listeners.splice(index, 1)
+      SVG.handlerMap.splice(index, 1)
+      
     }
   }
 
