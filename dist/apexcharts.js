@@ -7175,6 +7175,9 @@
         } else {
           if (fillColor.indexOf('rgba') > -1) {
             fillOpacity = Utils$1.getOpacityFromRGBA(fillColor);
+          } else {
+            // if rgb color, apply opacity
+            defaultColor = Utils$1.hexToRgba(Utils$1.rgb2hex(fillColor), fillOpacity);
           }
         }
         if (opts.opacity) fillOpacity = opts.opacity;
@@ -18354,10 +18357,11 @@
     }, {
       key: "createBorderRadiusArr",
       value: function createBorderRadiusArr(series) {
+        var _series$;
         var w = this.w;
         var alwaysApplyRadius = !this.w.config.chart.stacked || w.config.plotOptions.bar.borderRadiusWhenStacked !== 'last' || w.config.plotOptions.bar.borderRadius <= 0;
         var numSeries = series.length;
-        var numColumns = series[0].length;
+        var numColumns = ((_series$ = series[0]) === null || _series$ === void 0 ? void 0 : _series$.length) | 0;
         var output = Array.from({
           length: numSeries
         }, function () {
@@ -18415,17 +18419,17 @@
               output[negativeIndices[0]][_j2] = 'both';
             } else {
               // Multiple negative values
-              var firstNegativeIndex = negativeIndices[0];
-              var lastNegativeIndex = negativeIndices[negativeIndices.length - 1];
+              var highestNegativeIndex = Math.max.apply(Math, negativeIndices);
+              var lowestNegativeIndex = Math.min.apply(Math, negativeIndices);
               var _iterator2 = _createForOfIteratorHelper(negativeIndices),
                 _step2;
               try {
                 for (_iterator2.s(); !(_step2 = _iterator2.n()).done;) {
                   var _i3 = _step2.value;
-                  if (_i3 === firstNegativeIndex) {
-                    output[_i3][_j2] = 'bottom';
-                  } else if (_i3 === lastNegativeIndex) {
-                    output[_i3][_j2] = 'top';
+                  if (_i3 === highestNegativeIndex) {
+                    output[_i3][_j2] = 'bottom'; // Closest to axis
+                  } else if (_i3 === lowestNegativeIndex) {
+                    output[_i3][_j2] = 'top'; // Farthest from axis
                   } else {
                     output[_i3][_j2] = 'none';
                   }
@@ -18451,19 +18455,19 @@
                   output[_i4][_j2] = 'none';
                 }
               }
-              // Assign 'bottom' to the last negative bar (closest to axis)
+              // Assign 'bottom' to the highest negative index (closest to axis)
             } catch (err) {
               _iterator3.e(err);
             } finally {
               _iterator3.f();
             }
-            var _lastNegativeIndex = negativeIndices[negativeIndices.length - 1];
+            var _highestNegativeIndex = Math.max.apply(Math, negativeIndices);
             var _iterator4 = _createForOfIteratorHelper(negativeIndices),
               _step4;
             try {
               for (_iterator4.s(); !(_step4 = _iterator4.n()).done;) {
                 var _i5 = _step4.value;
-                if (_i5 === _lastNegativeIndex) {
+                if (_i5 === _highestNegativeIndex) {
                   output[_i5][_j2] = 'bottom';
                 } else {
                   output[_i5][_j2] = 'none';
@@ -19528,14 +19532,9 @@
             yArrValues.push(y);
             var pathFill = _this.barHelpers.getPathFillColor(series, i, j, realIndex);
             var classes = '';
-            if (w.globals.isBarHorizontal) {
-              if (_this.barHelpers.arrBorderRadius[realIndex][j] === 'bottom' && w.globals.series[realIndex][j] > 0) {
-                classes = 'apexcharts-flip-x';
-              }
-            } else {
-              if (_this.barHelpers.arrBorderRadius[realIndex][j] === 'bottom' && w.globals.series[realIndex][j] > 0) {
-                classes = 'apexcharts-flip-y';
-              }
+            var flipClass = w.globals.isBarHorizontal ? 'apexcharts-flip-x' : 'apexcharts-flip-y';
+            if (_this.barHelpers.arrBorderRadius[realIndex][j] === 'bottom' && w.globals.series[realIndex][j] > 0 || _this.barHelpers.arrBorderRadius[realIndex][j] === 'top' && w.globals.series[realIndex][j] < 0) {
+              classes = flipClass;
             }
             elSeries = _this.renderSeries({
               realIndex: realIndex,
@@ -27778,8 +27777,12 @@
         for (var event_ in SVG.listeners[index]) {
           SVG.off(node, event_);
         }
-        delete SVG.listeners[index];
-        delete SVG.handlerMap[index];
+
+        // delete SVG.listeners[index]
+        // delete SVG.handlerMap[index]
+
+        SVG.listeners.splice(index, 1);
+        SVG.handlerMap.splice(index, 1);
       }
     };
 
